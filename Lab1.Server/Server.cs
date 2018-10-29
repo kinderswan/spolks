@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,15 +33,14 @@ namespace Lab1.Server
             IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
 
             // Create a TCP/IP socket.  
-            listener = new Socket(ipAddress.AddressFamily,
-                SocketType.Stream, ProtocolType.Tcp);
+            listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             // Bind the socket to the local endpoint and   
             // listen for incoming connections.  
             try
             {
                 listener.Bind(localEndPoint);
-                listener.Listen(10);
+                listener.Listen(0);
 
                 // Start listening for connections.  
                 while (true)
@@ -49,67 +49,18 @@ namespace Lab1.Server
                     // Program is suspended while waiting for an incoming connection.  
                     handler = listener.Accept();
                     data = null;
-                    var fileMetaData = new List<byte>();
-                    var filename = string.Empty;
-                    long fileSize = 0;
 
                     // An incoming connection needs to be processed.  
                     while (true)
                     {
                         int bytesRec = handler.Receive(bytes);
                         data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                        if (data.IndexOf("\r\n") > -1)
+                        if (bytesRec < bytes.Length)
                         {
-                            if (data == "ECHO\r\n")
-                            {
-                                byte[] msg = Encoding.ASCII.GetBytes(lastUserCommand);
-
-                                handler.Send(msg);
-                            }
-                            else if (data == "CLOCK\r\n")
-                            {
-                                byte[] msg = Encoding.ASCII.GetBytes(DateTime.Now.ToLongDateString());
-
-                                handler.Send(msg);
-                            }
-                            else if (data == "CLOSE\r\n")
-                            {
-                                CloseConnection();
-                            }
-                            else if (data.StartsWith("file"))
-                            {
-
-                                filename = data.Split(':')[1];
-                                fileSize = Int64.Parse(data.Split(':')[2]);
-
-                            }
-                            else if(filename != "")
-                            {
-                                if(fileMetaData.Count < fileSize)
-                                {
-                                    fileMetaData.AddRange(bytes.Take(bytesRec));
-                                    continue;
-                                } else
-                                {
-                                    File.WriteAllBytes(filename, fileMetaData.ToArray());
-                                    filename = string.Empty;
-                                    fileSize = 0;
-                                    fileMetaData = null;
-                                }
-                            }
-                            else
-                            {
-                                byte[] msg = Encoding.ASCII.GetBytes("200");
-
-                                handler.Send(msg);
-                            }
-
-
-                            // Show the data on the console.  
-                            Console.WriteLine("Text received : {0}", data);
-                            lastUserCommand = data;
-                            data = string.Empty;
+                            DoOnReceive(data);
+                            data = null;
                         }
+
                     }
                 }
 
@@ -121,6 +72,64 @@ namespace Lab1.Server
 
             Console.WriteLine("\nPress ENTER to continue...");
             Console.Read();
+
+        }
+
+        private static void DoOnReceive(string data)
+        {
+            var receivedPackage = data.Deserialize<Package>();
+
+            if (receivedPackage.Message == "ECHO")
+            {
+                byte[] msg = Encoding.ASCII.GetBytes(lastUserCommand);
+
+                handler.Send(msg);
+            }
+            else if (receivedPackage.Message == "CLOCK")
+            {
+                byte[] msg = Encoding.ASCII.GetBytes(DateTime.Now.ToLongDateString());
+
+                handler.Send(msg);
+            }
+            else if (receivedPackage.Message == "CLOSE")
+            {
+                CloseConnection();
+            }
+            else if (receivedPackage.Message.Contains("DOWNLOAD"))
+            {
+                var fileName = receivedPackage.Message.Split(":")[1];
+
+                var file = File.ReadAllBytes(fileName);
+
+                var p = new Package
+                {
+                    File = file,
+                    Message = fileName
+                };
+
+                byte[] msg = Encoding.ASCII.GetBytes(p.Serialize());
+
+                handler.Send(msg);
+            }
+            else if(receivedPackage.File != null)
+            {
+                File.WriteAllBytes(receivedPackage.Message, receivedPackage.File);
+
+                byte[] msg = Encoding.ASCII.GetBytes($"{receivedPackage.Message} has been uploaded");
+
+                handler.Send(msg);
+            }
+            else
+            {
+                byte[] msg = Encoding.ASCII.GetBytes("200");
+
+                handler.Send(msg);
+            }
+
+
+            // Show the data on the console.  
+            Console.WriteLine("Text received : {0}", receivedPackage.Message);
+            lastUserCommand = receivedPackage.Message;
 
         }
 

@@ -11,7 +11,6 @@ namespace Lab1.Client
             Client.OpenConnection();
             while (true)
             {
-
                 var cmd = Console.ReadLine();
 
                 if (cmd.Contains("upload"))

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,24 +22,65 @@ namespace Lab1.Client
 
         public static void SendMessage(string message)
         {
-            byte[] msg = Encoding.ASCII.GetBytes(message + "\r\n");
+            var package = new Package
+            {
+                Message = message
+            };            
+
+            byte[] msg = Encoding.ASCII.GetBytes(package.Serialize());
             Post(msg);
         }
 
         public static void SendFile(string filename)
         {
             var bytes = File.ReadAllBytes(filename);
-            var meta = Encoding.ASCII.GetBytes($"file:{filename}:{bytes.Length}\r\n");
-            Post(meta.ToArray());
-            Thread.Sleep(50);
-            Post(bytes);
+
+            var package = new Package
+            {
+                Message = filename,
+                File = bytes
+            };
+
+            byte[] msg = Encoding.ASCII.GetBytes(package.Serialize());
+
+            Post(msg);
+        }
+
+        public static void DownloadFile(string filename)
+        {
+            var package = new Package
+            {
+                Message = filename
+            };
+
+            byte[] msg = Encoding.ASCII.GetBytes(package.Serialize());
+
+            Post(msg);
+
+            byte[] bytes = new Byte[1024];
+
+            string data = null;
+
+            while (true)
+            {
+                int bytesRec = socket.Receive(bytes);
+                data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                if (bytesRec < bytes.Length)
+                {
+                    var response = data.Deserialize<Package>();
+                    File.WriteAllBytes(response.Message, response.File);
+                    data = null;
+                    break;
+                }
+
+            }
         }
 
         private static void Post(byte[] toSend)
         {
             int bytesSent = socket.Send(toSend);
 
-            /*var buffer = new byte[1024];
+            var buffer = new byte[1024];
 
             int bytesRec = 0;
 
@@ -53,7 +95,7 @@ namespace Lab1.Client
 
 
             Console.WriteLine("Server says: {0}",
-                Encoding.ASCII.GetString(buffer, 0, bytesRec));*/
+                Encoding.ASCII.GetString(buffer, 0, bytesRec));
 
         }
 
