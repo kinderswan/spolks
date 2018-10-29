@@ -1,6 +1,7 @@
 ﻿using Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,10 +21,12 @@ namespace Lab1.Server
 
         private static Socket handler = null;
 
+        private static Stopwatch watch = null;
+
         public static void StartListening()
         {
             // Data buffer for incoming data.  
-            byte[] bytes = new Byte[1024];
+            byte[] bytes = new Byte[2048];
 
             // Establish the local endpoint for the socket.  
             // Dns.GetHostName returns the name of the   
@@ -41,28 +44,30 @@ namespace Lab1.Server
             {
                 listener.Bind(localEndPoint);
                 listener.Listen(0);
+                Console.WriteLine("Waiting for a connection...");
+                // Program is suspended while waiting for an incoming connection.  
+                handler = listener.Accept();
+                data = null;
 
-                // Start listening for connections.  
+                // An incoming connection needs to be processed.  
                 while (true)
                 {
-                    Console.WriteLine("Waiting for a connection...");
-                    // Program is suspended while waiting for an incoming connection.  
-                    handler = listener.Accept();
-                    data = null;
-
-                    // An incoming connection needs to be processed.  
-                    while (true)
+                    if (watch == null)
                     {
-                        int bytesRec = handler.Receive(bytes);
-                        data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                        if (bytesRec < bytes.Length)
-                        {
-                            DoOnReceive(data);
-                            data = null;
-                        }
-
+                        watch = Stopwatch.StartNew();
                     }
+                    int bytesRec = handler.Receive(bytes);
+                    data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                    if (bytesRec < bytes.Length)
+                    {
+                        var bitrate = watch.ElapsedMilliseconds;
+                        Console.WriteLine($"bitrate = {data.Length / bitrate}");
+                        DoOnReceive(data);
+                        data = null;
+                    }
+
                 }
+
 
             }
             catch (Exception e)
@@ -111,7 +116,7 @@ namespace Lab1.Server
 
                 handler.Send(msg);
             }
-            else if(receivedPackage.File != null)
+            else if (receivedPackage.File != null)
             {
                 File.WriteAllBytes(receivedPackage.Message, receivedPackage.File);
 

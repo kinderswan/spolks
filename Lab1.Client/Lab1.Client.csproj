@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="111.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="123.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
