@@ -26,7 +26,7 @@ namespace Lab1.Server
         public static void StartListening()
         {
             // Data buffer for incoming data.  
-            byte[] bytes = new Byte[2048];
+            byte[] bytes = new Byte[45000];
 
             // Establish the local endpoint for the socket.  
             // Dns.GetHostName returns the name of the   
@@ -60,10 +60,11 @@ namespace Lab1.Server
                     data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
                     if (bytesRec < bytes.Length)
                     {
-                        var bitrate = watch.ElapsedMilliseconds;
-                        Console.WriteLine($"bitrate = {data.Length / bitrate}");
+                        var bitrate = watch.ElapsedMilliseconds / 1000.0;
+                        Console.WriteLine($"bitrate = {((double)data.Length * 255 * 2 / bitrate}");
                         DoOnReceive(data);
                         data = null;
+                        watch = null;
                     }
 
                 }

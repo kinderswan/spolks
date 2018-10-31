@@ -57,7 +57,7 @@ namespace Lab1.Client
 
             Post(msg);
 
-            byte[] bytes = new Byte[2048];
+            byte[] bytes = new Byte[45000];
 
             string data = null;
 
