@@ -7,7 +7,7 @@ namespace Lab1.Server
         static void Main(string[] args)
         {
             Console.WriteLine("Server");
-            Server.StartListening();
+            Server.StartListening(args[0]);
             Console.ReadLine();
         }
     }

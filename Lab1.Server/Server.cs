@@ -23,7 +23,7 @@ namespace Lab1.Server
 
         private static Stopwatch watch = null;
 
-        public static void StartListening()
+        public static void StartListening(string ip)
         {
             // Data buffer for incoming data.  
             byte[] bytes = new Byte[45000];
@@ -31,8 +31,7 @@ namespace Lab1.Server
             // Establish the local endpoint for the socket.  
             // Dns.GetHostName returns the name of the   
             // host running the application.  
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress ipAddress = ipHostInfo.AddressList[0];
+            IPAddress ipAddress = IPAddress.Parse(ip);
             IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
 
             // Create a TCP/IP socket.  
@@ -60,8 +59,8 @@ namespace Lab1.Server
                     data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
                     if (bytesRec < bytes.Length)
                     {
-                        var bitrate = watch.ElapsedMilliseconds / 1000.0;
-                        Console.WriteLine($"bitrate = {((double)data.Length * 255 * 2 / bitrate}");
+                        var bitrate = watch.ElapsedMilliseconds / 1000.0; 
+                        Console.WriteLine($"bitrate = {data.Length / bitrate}");
                         DoOnReceive(data);
                         data = null;
                         watch = null;
@@ -93,7 +92,7 @@ namespace Lab1.Server
             }
             else if (receivedPackage.Message == "CLOCK")
             {
-                byte[] msg = Encoding.ASCII.GetBytes(DateTime.Now.ToLongDateString());
+                byte[] msg = Encoding.ASCII.GetBytes(DateTime.Now.ToString());
 
                 handler.Send(msg);
             }
@@ -105,7 +104,13 @@ namespace Lab1.Server
             {
                 var fileName = receivedPackage.Message.Split(":")[1];
 
-                var file = File.ReadAllBytes(fileName);
+                byte[] file = null;
+
+                try
+                {
+                    file = File.ReadAllBytes(fileName);
+                }
+                catch { }
 
                 var p = new Package
                 {

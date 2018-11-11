@@ -8,7 +8,7 @@ namespace Lab1.Client
         static void Main(string[] args)
         {
             Console.WriteLine("Client");
-            Client.OpenConnection();
+            Client.OpenConnection(args[0]);
             while (true)
             {
                 var cmd = Console.ReadLine();
@@ -17,11 +17,15 @@ namespace Lab1.Client
                 {
                     var fileName = cmd.Split(':')[1];
                     Client.SendFile(fileName);
+                } else if (cmd.Contains("DOWNLOAD"))
+                {
+                    var fileName = cmd.Split(':')[1];
+                    Client.DownloadFile(fileName);
                 }
-
-                Client.SendMessage(cmd);
-
-
+                else
+                {
+                    Client.SendMessage(cmd);
+                }
 
                 if (cmd == "exit")
                 {

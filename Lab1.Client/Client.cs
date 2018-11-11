@@ -41,6 +41,8 @@ namespace Lab1.Client
                 File = bytes
             };
 
+            Console.WriteLine(package.Serialize());
+
             byte[] msg = Encoding.ASCII.GetBytes(package.Serialize());
 
             Post(msg);
@@ -80,7 +82,7 @@ namespace Lab1.Client
         {
             int bytesSent = socket.Send(toSend);
 
-            var buffer = new byte[1024];
+            var buffer = new byte[45000];
 
             int bytesRec = 0;
 
@@ -99,14 +101,12 @@ namespace Lab1.Client
 
         }
 
-        public static void OpenConnection()
+        public static void OpenConnection(string ip)
         {
             try
             {
                 // Establish the remote endpoint for the socket.  
-                // This example uses port 11000 on the local computer.  
-                IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-                IPAddress ipAddress = ipHostInfo.AddressList[0];
+                IPAddress ipAddress = IPAddress.Parse(ip);
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, 11000);
 
                 // Create a TCP/IP  socket.  
