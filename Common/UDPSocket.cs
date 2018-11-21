@@ -133,10 +133,18 @@ namespace Common
                 var index = filechunks.FindIndex(x => x.NumberOfChunk == chunk.NumberOfChunk);
                 filechunks[index] = chunk;
             }
-
-            filechunks.Add(chunk);
+            else
+            {
+                filechunks.Add(chunk);
+            }
 
             var backMessage = Encoding.ASCII.GetBytes(chunk.HashSumChunk.ToString());
+
+            var res = DateTime.Now.Second;
+            if(chunk.HashSumChunk % res == 0)
+            {
+                backMessage = Encoding.ASCII.GetBytes("35243642");
+            }
 
             socket.SendTo(backMessage, sendingEp);
         }
@@ -189,14 +197,17 @@ namespace Common
             long longResult;
 
             long.TryParse(hashReceived, out longResult);
-
+            Console.WriteLine($"{chunk.HashSumChunk} == {longResult}");
             return chunk.HashSumChunk == longResult;
         }
 
         public void SendFile(byte[] file, string message)
         {
             this.SendMessageFromClientToServer(message);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             var result = this.SendFile(file);
+            Console.WriteLine($"kbs = {((double)file.Length / 1000) / stopwatch.ElapsedMilliseconds * 1000.0}");
             this.SendMessageFromClientToServer("SAVE");
 
         }

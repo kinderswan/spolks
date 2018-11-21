@@ -8,7 +8,7 @@ namespace Lab1.Client
         static void Main(string[] args)
         {
             Console.WriteLine("Client");
-            Client.OpenConnection(args[0]);
+            Client.OpenConnection(args.Length > 0 ? args[0] : "127.0.0.1");
             while (true)
             {
                 var cmd = Console.ReadLine();

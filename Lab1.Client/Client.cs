@@ -41,9 +41,7 @@ namespace Lab1.Client
                 File = bytes
             };
 
-            Console.WriteLine(package.Serialize());
-
-            byte[] msg = Encoding.ASCII.GetBytes(package.Serialize());
+           byte[] msg = Encoding.ASCII.GetBytes(package.Serialize());
 
             Post(msg);
         }

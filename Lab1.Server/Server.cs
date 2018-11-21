@@ -59,8 +59,7 @@ namespace Lab1.Server
                     data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
                     if (bytesRec < bytes.Length)
                     {
-                        var bitrate = watch.ElapsedMilliseconds / 1000.0; 
-                        Console.WriteLine($"bitrate = {data.Length / bitrate}");
+                        
                         DoOnReceive(data);
                         data = null;
                         watch = null;
@@ -124,7 +123,9 @@ namespace Lab1.Server
             }
             else if (receivedPackage.File != null)
             {
+                Console.WriteLine($"kbs = {((double)receivedPackage.File.Length / 1000) / watch.ElapsedMilliseconds * 1000.0}");
                 File.WriteAllBytes(receivedPackage.Message, receivedPackage.File);
+
 
                 byte[] msg = Encoding.ASCII.GetBytes($"{receivedPackage.Message} has been uploaded");
 
