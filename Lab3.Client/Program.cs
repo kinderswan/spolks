@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -32,9 +34,9 @@ namespace Lab3.Client
             new ManualResetEvent(false);
 
         // The response from the remote device.  
-        private static String response = String.Empty;
+        private static string response = string.Empty;
 
-        private static void StartClient(IPEndPoint remoteEP)
+        private static void StartClient(IPEndPoint remoteEP, string filename)
         {
             // Connect to a remote device.  
             try
@@ -49,8 +51,9 @@ namespace Lab3.Client
                     new AsyncCallback(ConnectCallback), client);
                 connectDone.WaitOne();
 
+                var bytes = File.ReadAllBytes(filename);
                 // Send test data to the remote device.  
-                Send(client, "This is a test<EOF>");
+                Send(client, bytes, filename);
                 sendDone.WaitOne();
 
                 // Receive the response from the remote device.  
@@ -98,8 +101,10 @@ namespace Lab3.Client
             try
             {
                 // Create the state object.  
-                StateObject state = new StateObject();
-                state.workSocket = client;
+                StateObject state = new StateObject
+                {
+                    workSocket = client
+                };
 
                 // Begin receiving the data from the remote device.  
                 client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
@@ -149,13 +154,12 @@ namespace Lab3.Client
             }
         }
 
-        private static void Send(Socket client, String data)
+        private static void Send(Socket client, byte[] byteData, string filename)
         {
-            // Convert the string data to byte data using ASCII encoding.  
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
+            var illegal = Encoding.UTF8.GetBytes(filename.PadRight(50)).Concat(byteData).Concat(Encoding.ASCII.GetBytes("<ENDOFFILE>")).ToArray();
 
             // Begin sending the data to the remote device.  
-            client.BeginSend(byteData, 0, byteData.Length, 0,
+            client.BeginSend(illegal, 0, illegal.Length, 0,
                 new AsyncCallback(SendCallback), client);
         }
 
@@ -179,13 +183,13 @@ namespace Lab3.Client
             }
         }
 
-        public static int Main(String[] args)
+        public static int Main(string[] args)
         {
             var ip = args.Length > 0 ? args[0] : "127.0.0.1";
             var addr = IPAddress.Parse(ip);
-            var edp = new IPEndPoint(addr, 11000);
+            var edp = new IPEndPoint(addr, args.Length > 0 ? int.Parse(args[1]) : 11000);
 
-            StartClient(edp);
+            StartClient(edp, args.Length > 0 ? args[2] : "1.pdf");
             Console.ReadLine();
             return 0;
         }
